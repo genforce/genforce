@@ -1,0 +1,8 @@
+scipy==1.5.2
+opencv-python==4.4.0.42
+bs4
+lmdb
+tensorboard
+tqdm==4.49.0
+rich
+easydict
