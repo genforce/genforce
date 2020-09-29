@@ -30,7 +30,7 @@ MODEL_ZOO = {
         resolution=256,
         url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/ESCyg6hpNn1LlHVX_un1wLsBZAORUNkW9MO2kU1X5kafAQ?e=09TbGC&download=1',
     ),
-    'pggan_churchoutdoor256': dict(
+    'pggan_church256': dict(
         gan_type='pggan',
         resolution=256,
         url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EQ8cKujs2TVGjCL_j6bsnk8BqD9REF2ME2lBnpbTPsqIvA?e=zH55fT&download=1',
@@ -165,7 +165,7 @@ MODEL_ZOO = {
     'stylegan_ffhq1024': dict(
         gan_type='stylegan',
         resolution=1024,
-        url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EXn4sso_9fBEvXBEKAyGiekBXEpmsPOsVXZC0YIOE_iwWQ?e=rnhgd7&download=1',
+        url='https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EdfMxgb0hU9BoXwiR3dqYDEBowCSEF1IcsW3n4kwfoZ9OQ?e=VwIV58&download=1',
     ),
     'stylegan_celebahq1024': dict(
         gan_type='stylegan',

@@ -33,7 +33,7 @@ Please download the models you need and save them to `checkpoints/`.
 | StyleGAN Official | | | |
 | :-- | :--: | :--: | :--: |
 | Model (Dataset) | Training Samples | Training Duration (K Images) | FID
-| [ffhq-1024x1024](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EXn4sso_9fBEvXBEKAyGiekBXEpmsPOsVXZC0YIOE_iwWQ?e=rnhgd7&download=1)     |    70,000 | 25,000 | 4.40 |
+| [ffhq-1024x1024](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EdfMxgb0hU9BoXwiR3dqYDEBowCSEF1IcsW3n4kwfoZ9OQ?e=VwIV58&download=1)     |    70,000 | 25,000 | 4.40 |
 | [celebahq-1024x1024](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EcCdXHddE7FOvyfmqeOyc9ABqVuWh8PQYFnV6JM1CXvFig?e=1nUYZ5&download=1) |    30,000 | 25,000 | 5.06 |
 | [bedroom-256x256](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/Ea6RBPddjcRNoFMXm8AyEBcBUHdlRNtjtclNKFe89amjBw?e=Og8Vff&download=1)    | 3,033,042 | 70,000 | 2.65 |
 | [cat-256x256](https://mycuhk-my.sharepoint.com/:u:/g/personal/1155082926_link_cuhk_edu_hk/EVjX8u9HuehLip3z0hRfIHcB7QtoFkTB7NiRDb8nrKOl2w?e=lHcp1B&download=1)        | 1,657,266 | 70,000 | 8.53 |
