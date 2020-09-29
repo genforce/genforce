@@ -2,6 +2,8 @@
 
 An efficient PyTorch library for deep generative modeling.
 
+![image](./teaser.gif)
+
 ## Highlights
 
 - **Distributed** training framework.
