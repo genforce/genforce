@@ -1,6 +1,6 @@
 # GenForce Lib for Generative Modeling
 
-An efficient PyTorch library for deep generative modeling.
+An efficient PyTorch library for deep generative modeling. May the Generative Force (GenForce) be with You.
 
 ![image](./teaser.gif)
 
