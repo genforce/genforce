@@ -184,7 +184,7 @@ class StyleGAN2Generator(nn.Module):
         if self.training and style_mixing_prob > 0:
             new_z = torch.randn_like(z)
             new_w = self.mapping(new_z, label)['w']
-            if np.ranodm.uniform() < style_mixing_prob:
+            if np.random.uniform() < style_mixing_prob:
                 mixing_cutoff = np.random.randint(1, self.num_layers)
                 w = self.truncation(w)
                 new_w = self.truncation(new_w)
