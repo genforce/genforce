@@ -10,7 +10,7 @@ An efficient PyTorch library for deep generative modeling. May the Generative Fo
 - **Fast** training speed.
 - **Modular** design for prototyping new models.
 - **Highly** reproducing the training of StyleGAN compared to [the official TensorFlow version](https://github.com/NVlabs/stylegan).
-- **Model zoo** containing a rich set of pretrained GAN models, with [Colab live demo](https://colab.research.google.com/drive/1ytdR30L7uXLaG_4Iph331o70wZWA-bkd?usp=sharing) to play.
+- **Model zoo** containing a rich set of pretrained GAN models, with [Colab live demo](https://colab.research.google.com/github/genforce/genforce/blob/master/docs/synthesize_demo.ipynb) to play.
 
 We will also support following functions *in the very near future*. Please **STAY TUNED**.
 
@@ -54,7 +54,7 @@ We also provide an inference demo, `synthesize.py`, which allows to synthesize i
 python synthesize.py stylegan_ffhq1024
 ```
 
-You can also play the demo at [Colab](https://colab.research.google.com/drive/1ytdR30L7uXLaG_4Iph331o70wZWA-bkd?usp=sharing).
+You can also play the demo at [Colab](https://colab.research.google.com/github/genforce/genforce/blob/master/docs/synthesize_demo.ipynb).
 
 ## Get Started
 
