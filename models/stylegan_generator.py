@@ -262,7 +262,7 @@ class MappingModule(nn.Module):
         for i in range(self.num_layers):
             w = self.__getattr__(f'dense{i}')(w)
         results = {
-            'z': z * np.sqrt(self.input_space_dim),
+            'z': z,
             'label': label,
             'w': w,
         }

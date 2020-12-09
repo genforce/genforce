@@ -157,7 +157,7 @@ class PGGANGenerator(nn.Module):
                              f'[batch_size, latent_dim], where '
                              f'`latent_dim` equals to {self.z_space_dim}!\n'
                              f'But `{z.shape}` is received!')
-        z = self.layer0.pixel_norm(z) * np.sqrt(self.z_space_dim)
+        z = self.layer0.pixel_norm(z)
         if self.label_size:
             if label is None:
                 raise ValueError(f'Model requires an additional label '

@@ -12,7 +12,7 @@ from .stylegan2_discriminator import StyleGAN2Discriminator
 __all__ = [
     'MODEL_ZOO', 'PGGANGenerator', 'PGGANDiscriminator', 'StyleGANGenerator',
     'StyleGANDiscriminator', 'StyleGAN2Generator', 'StyleGAN2Discriminator',
-    'build_generator', 'build_discriminator', 'build_model'
+    'build_generator', 'build_discriminator', 'build_model', 'parse_gan_type'
 ]
 
 _GAN_TYPES_ALLOWED = ['pggan', 'stylegan', 'stylegan2']
@@ -91,3 +91,24 @@ def build_model(gan_type, module, resolution, **kwargs):
     if module == 'discriminator':
         return build_discriminator(gan_type, resolution, **kwargs)
     raise NotImplementedError(f'Unsupported module `{module}`!')
+
+
+def parse_gan_type(module):
+    """Parses GAN type of a given module.
+
+    Args:
+        module: The module to parse GAN type from.
+
+    Returns:
+        A string, indicating the GAN type.
+
+    Raises:
+        ValueError: If the GAN type is unknown.
+    """
+    if isinstance(module, (PGGANGenerator, PGGANDiscriminator)):
+        return 'pggan'
+    if isinstance(module, (StyleGANGenerator, StyleGANDiscriminator)):
+        return 'stylegan'
+    if isinstance(module, (StyleGAN2Generator, StyleGAN2Discriminator)):
+        return 'stylegan2'
+    raise ValueError(f'Unable to parse GAN type from type `{type(module)}`!')
