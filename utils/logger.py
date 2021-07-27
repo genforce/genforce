@@ -27,7 +27,14 @@ def build_logger(logger_type='normal', **kwargs):
         `normal`: The default logger.
         `rich`: Record messages with decoration, using `rich` module.
         `dumb`: Do NOT record any message.
+
+    Args:
+        logger_type: Type of logger, which is case insensitive.
+            (default: `normal`)
+        **kwargs: Additional arguments.
     """
+    assert isinstance(logger_type, str)
+    logger_type = logger_type.lower()
     if logger_type not in _LOGGER_TYPES:
         raise ValueError(f'Invalid logger type `{logger_type}`!\n'
                          f'Types allowed: {_LOGGER_TYPES}.')
@@ -64,6 +71,7 @@ class Logger(object):
             logger_name: Unique name for the logger. (default: `logger`)
         """
         self.logger = logging.getLogger(logger_name)
+        self.logger.propagate = False
         if self.logger.hasHandlers():  # Already existed
             raise SystemExit(f'Logger `{logger_name}` has already existed!\n'
                              f'Please use another name, or otherwise the '
@@ -83,8 +91,8 @@ class Logger(object):
         # Save log message with all levels into log file if needed.
         if logfile_name:
             os.makedirs(work_dir, exist_ok=True)
-            file_stream = open(os.path.join(work_dir, logfile_name), 'a')
-            file_handler = logging.StreamHandler(stream=file_stream)
+            self.file_stream = open(os.path.join(work_dir, logfile_name), 'a')
+            file_handler = logging.StreamHandler(stream=self.file_stream)
             file_handler.setLevel(logging.DEBUG)
             file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
@@ -99,6 +107,10 @@ class Logger(object):
 
         self.pbar = []
         self.pbar_kwargs = None
+
+    def __del__(self):
+        if hasattr(self, 'file_stream'):
+            self.file_stream.close()
 
     def print(self, *messages, **_unused_kwargs):
         """Prints messages without time stamp or log level."""
@@ -206,6 +218,7 @@ class RichLogger(object):
             logger_name: Unique name for the logger. (default: `logger`)
         """
         self.logger = logging.getLogger(logger_name)
+        self.logger.propagate = False
         if self.logger.hasHandlers():  # Already existed
             raise SystemExit(f'Logger `{logger_name}` has already existed!\n'
                              f'Please use another name, or otherwise the '
@@ -228,9 +241,9 @@ class RichLogger(object):
         # Save log message with all levels into log file if needed.
         if logfile_name:
             os.makedirs(work_dir, exist_ok=True)
-            file_stream = open(os.path.join(work_dir, logfile_name), 'a')
+            self.file_stream = open(os.path.join(work_dir, logfile_name), 'a')
             file_console = Console(
-                file=file_stream, log_time=False, log_path=False)
+                file=self.file_stream, log_time=False, log_path=False)
             file_handler = RichHandler(
                 level=logging.DEBUG,
                 console=file_console,
@@ -249,6 +262,10 @@ class RichLogger(object):
         self.critical = self.logger.critical
 
         self.pbar = None
+
+    def __del__(self):
+        if hasattr(self, 'file_stream'):
+            self.file_stream.close()
 
     def print(self, *messages, **kwargs):
         """Prints messages without time stamp or log level."""

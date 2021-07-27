@@ -13,16 +13,8 @@ from models import MODEL_ZOO
 from models import build_generator
 from utils.misc import bool_parser
 from utils.visualizer import HtmlPageVisualizer
+from utils.visualizer import postprocess_image
 from utils.visualizer import save_image
-
-
-def postprocess(images):
-    """Post-processes images from `torch.Tensor` to `numpy.ndarray`."""
-    images = images.detach().cpu().numpy()
-    images = (images + 1) * 255 / 2
-    images = np.clip(images + 0.5, 0, 255).astype(np.uint8)
-    images = images.transpose(0, 2, 3, 1)
-    return images
 
 
 def parse_args():
@@ -128,7 +120,7 @@ def main():
         code = torch.randn(len(sub_indices), generator.z_space_dim).cuda()
         with torch.no_grad():
             images = generator(code, **synthesis_kwargs)['image']
-            images = postprocess(images)
+            images = postprocess_image(images.detach().cpu().numpy())
         for sub_idx, image in zip(sub_indices, images):
             if args.save_raw_synthesis:
                 save_path = os.path.join(

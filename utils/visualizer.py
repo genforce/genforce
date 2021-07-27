@@ -1,5 +1,5 @@
 # python3.7
-"""Utility functions for visualizing results on html page."""
+"""Utility functions for visualizing results."""
 
 import base64
 import os.path
@@ -9,8 +9,9 @@ from bs4 import BeautifulSoup
 
 __all__ = [
     'get_grid_shape', 'get_blank_image', 'load_image', 'save_image',
-    'resize_image', 'add_text_to_image', 'parse_image_size', 'fuse_images',
-    'HtmlPageVisualizer', 'HtmlPageReader', 'VideoReader', 'VideoWriter'
+    'resize_image', 'postprocess_image', 'add_text_to_image',
+    'parse_image_size', 'fuse_images', 'HtmlPageVisualizer', 'HtmlPageReader',
+    'VideoReader', 'VideoWriter'
 ]
 
 
@@ -137,6 +138,43 @@ def resize_image(image, *args, **kwargs):
     if image.ndim == 2:
         return image[:, :, np.newaxis]
     return image
+
+
+def postprocess_image(image, min_val=-1.0, max_val=1.0, data_format='NCHW'):
+    """Post-processes image to pixel range [0, 255] with dtype `uint8`.
+
+    NOTE: The returned image will always be with `HWC` format.
+
+    Args:
+        min_val: Minimum value of the input image.
+        max_val: Maximum value of the input image.
+        data_format: Data format of the input image. Supporting `NCHW`, `NHWC`,
+            `CHW`, `HWC`.
+
+    Returns:
+        The post-processed image.
+
+    Raises:
+        NotImplementedError: If the input `data_format` is not support.
+    """
+    assert isinstance(image, np.ndarray)
+    image = image.astype(np.float64)
+    image = (image - min_val) * 255 / (max_val - min_val)
+    image = np.clip(image + 0.5, 0, 255).astype(np.uint8)
+    data_format = data_format.upper()
+    if data_format == 'NCHW':
+        assert image.ndim == 4 and image.shape[1] in [1, 3]
+        return image.transpose(0, 2, 3, 1)
+    if data_format == 'NHWC':
+        assert image.ndim == 4 and image.shape[3] in [1, 3]
+        return image
+    if data_format == 'CHW':
+        assert image.ndim == 3 and image.shape[0] in [1, 3]
+        return image.transpose(1, 2, 0)
+    if data_format == 'HWC':
+        assert image.ndim == 3 and image.shape[2] in [1, 3]
+        return image
+    raise NotImplementedError(f'Data format `{data_format}` is not supported!')
 
 
 def add_text_to_image(image,

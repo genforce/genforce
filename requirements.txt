@@ -1,8 +1,10 @@
-scipy==1.5.2
-opencv-python==4.4.0.42
+scikit-learn
+scipy
+opencv-python
 bs4
+requests
 lmdb
 tensorboard
-tqdm==4.49.0
+tqdm
 rich
 easydict
