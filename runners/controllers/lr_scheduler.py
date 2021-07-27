@@ -139,7 +139,52 @@ class StepWarmUpLR(BaseWarmUpLR):
                         f'or tuple, but `{type(self.decay_step)}` is received!')
 
 
-_ALLOWED_LR_TYPES = ['FIXED', 'STEP']
+class EXPStepWarmUpLR(BaseWarmUpLR):
+    """Defines a warm-up LRScheduler with exponentially decayed learning rate.
+
+    In particular, the learning rate will be decayed with factor `decay_factor`
+    every `decay_step` iterations.
+
+    If the `decay_step` is a list of integers, the learning rate will be
+    adjusted at those particular iterations.
+    """
+    def __init__(self,
+                 optimizer,
+                 decay_step,
+                 decay_factor=0.1,
+                 warmup_type='NO',
+                 warmup_iters=0,
+                 warmup_factor=0.1):
+        self._decay_step = decay_step
+        self._decay_factor = decay_factor
+        super().__init__(optimizer, warmup_type, warmup_iters, warmup_factor)
+
+    @property
+    def decay_step(self):
+        """Gets the decay step."""
+        return self._decay_step
+
+    @property
+    def decay_factor(self):
+        """Gets the decay factor."""
+        return self._decay_factor
+
+    def _get_lr(self):
+        if isinstance(self.decay_step, int):
+            scale = self.decay_factor ** (self.last_epoch / self.decay_step)
+            return [lr * scale for lr in self.base_lrs]
+        if isinstance(self.decay_step, (list, tuple)):
+            bucket_id = 0
+            for step in set(self.decay_step):
+                if self.last_epoch >= step:
+                    bucket_id += 1
+            scale = self.decay_factor ** bucket_id
+            return [lr * scale for lr in self.base_lrs]
+        raise TypeError(f'Type of LR decay step can only be integer, list, '
+                        f'or tuple, but `{type(self.decay_step)}` is received!')
+
+
+_ALLOWED_LR_TYPES = ['FIXED', 'STEP', 'EXPSTEP']
 
 
 def build_lr_scheduler(config, optimizer):
@@ -187,6 +232,13 @@ def build_lr_scheduler(config, optimizer):
                             warmup_type=warmup_type,
                             warmup_iters=warmup_iters,
                             warmup_factor=warmup_factor)
+    if lr_type == 'EXPSTEP':
+        return EXPStepWarmUpLR(optimizer=optimizer,
+                               decay_step=config['decay_step'],
+                               decay_factor=config.get('decay_factor', 0.1),
+                               warmup_type=warmup_type,
+                               warmup_iters=warmup_iters,
+                               warmup_factor=warmup_factor)
     raise NotImplementedError(f'Not implemented scheduler type `{lr_type}`!')
 
 
@@ -223,7 +275,7 @@ class LRScheduler(BaseController):
             runner.lr_schedulers[name] = build_lr_scheduler(
                 config, runner.optimizers[name])
             runner.running_stats.add(
-                f'lr_{name}', log_format='.1e', log_name=f'lr ({name})',
+                f'lr_{name}', log_format='.3e', log_name=f'lr ({name})',
                 log_strategy='CURRENT')
 
     def execute_after_iteration(self, runner):

@@ -56,7 +56,6 @@ class BaseRunner(object):
         self.logger.print(config_str + '\n')
         with open(os.path.join(self.work_dir, 'config.json'), 'w') as f:
             json.dump(self.config, f, indent=4)
-
         self._rank = dist.get_rank()
         self._world_size = dist.get_world_size()
 
@@ -66,6 +65,10 @@ class BaseRunner(object):
         self._start_iter = 0
         self.seen_img = 0
         self.total_iters = self.config.get('total_iters', 0)
+        if self.total_iters == 0 and self.config.get('total_img', 0) > 0:
+            total_image = self.config.get('total_img')
+            total_batch = self.world_size * self.batch_size
+            self.total_iters = int(total_image / total_batch + 0.5)
 
         self.mode = None
         self.train_loader = None
@@ -172,6 +175,16 @@ class BaseRunner(object):
         build_optimizers(opt_config, self)
         self.controllers.append(controllers.LRScheduler(lr_config))
         self.logger.info(f'Finish building models.')
+
+        model_info = 'Model structures:\n'
+        model_info += '==============================================\n'
+        for module in self.models:
+            model_info += f'{module}\n'
+            model_info += '----------------------------------------------\n'
+            model_info += str(self.models[module])
+            model_info += '\n'
+            model_info += "==============================================\n"
+        self.logger.info(model_info)
 
     def distribute(self):
         """Sets `self.model` as `torch.nn.parallel.DistributedDataParallel`."""
@@ -344,7 +357,8 @@ class BaseRunner(object):
              running_metadata=True,
              learning_rate=True,
              optimizer=True,
-             running_stats=False):
+             running_stats=False,
+             map_location='cpu'):
         """Loads previous running status.
 
         Args:
@@ -354,12 +368,16 @@ class BaseRunner(object):
             learning_rate: Whether to load the learning rate. (default: True)
             optimizer: Whether to load the optimizer. (default: True)
             running_stats: Whether to load the running stats. (default: False)
+            map_location: Map location used for model loading. (default: `cpu`)
         """
         self.logger.info(f'Resuming from checkpoint `{filepath}` ...')
         if not os.path.isfile(filepath):
             raise IOError(f'Checkpoint `{filepath}` does not exist!')
-        device = torch.cuda.current_device()
-        map_location = lambda storage, location: storage.cuda(device)
+        map_location = map_location.lower()
+        assert map_location in ['cpu', 'gpu']
+        if map_location == 'gpu':
+            device = torch.cuda.current_device()
+            map_location = lambda storage, location: storage.cuda(device)
         checkpoint = torch.load(filepath, map_location=map_location)
         # Load models.
         if 'models' not in checkpoint:

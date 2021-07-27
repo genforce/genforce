@@ -12,6 +12,7 @@ from metrics.inception import build_inception_model
 from metrics.fid import extract_feature
 from metrics.fid import compute_fid
 from utils.visualizer import HtmlPageVisualizer
+from utils.visualizer import postprocess_image
 from utils.visualizer import save_image
 from utils.visualizer import load_image
 from .base_runner import BaseRunner
@@ -46,15 +47,6 @@ class BaseGANRunner(BaseRunner):
             avg_params[param_name].data = (
                 avg_params[param_name].data * beta +
                 model_params[param_name].data * (1 - beta))
-
-    @staticmethod
-    def postprocess(images):
-        """Post-processes images from `torch.Tensor` to `numpy.ndarray`."""
-        images = images.detach().cpu().numpy()
-        images = (images + 1) * 255 / 2
-        images = np.clip(images + 0.5, 0, 255).astype(np.uint8)
-        images = images.transpose(0, 2, 3, 1)
-        return images
 
     def build_models(self):
         super().build_models()
@@ -127,7 +119,7 @@ class BaseGANRunner(BaseRunner):
                 else:
                     G = self.models['generator']
                 images = G(code, **self.G_kwargs_val)['image']
-                images = self.postprocess(images)
+                images = postprocess_image(images.detach().cpu().numpy())
             for sub_idx, image in zip(sub_indices, images):
                 save_image(os.path.join(temp_dir, f'{sub_idx:06d}.jpg'), image)
             self.logger.update_pbar(task1, batch_size * self.world_size)

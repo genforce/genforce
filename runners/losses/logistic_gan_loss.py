@@ -1,8 +1,9 @@
 # python3.7
-"""Defines loss functions."""
+"""Defines loss functions for GAN training."""
+
+import numpy as np
 
 import torch
-import numpy as np
 import torch.nn.functional as F
 
 __all__ = ['LogisticGANLoss']
