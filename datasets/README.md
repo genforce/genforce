@@ -4,7 +4,7 @@
 
 Currently, our dataloader is able to load data from
 
-- a directory that is full of images
+- a directory that is full of images (support using [`turbojpeg`](https://pypi.org/project/PyTurboJPEG/) to speed up decoding images.)
 - a `lmdb` file
 - an image list
 - a compressed file (i.e., `zip` package)

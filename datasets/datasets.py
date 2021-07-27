@@ -17,6 +17,15 @@ from .transforms import crop_resize_image
 from .transforms import resize_image
 from .transforms import normalize_image
 
+try:
+    import turbojpeg
+    BASE_DIR = os.path.dirname(os.path.relpath(__file__))
+    LIBRARY_NAME = 'libturbojpeg.so.0'
+    LIBRARY_PATH = os.path.join(BASE_DIR, LIBRARY_NAME)
+    jpeg = turbojpeg.TurboJPEG(LIBRARY_PATH)
+except ImportError:
+    jpeg = None
+
 __all__ = ['BaseDataset']
 
 _FORMATS_ALLOWED = ['dir', 'lmdb', 'list', 'zip']
@@ -189,16 +198,19 @@ class BaseDataset(Dataset):
 
         # Load data.
         if self.data_format == 'dir':
-            # TODO: support turbo-jpeg backend
             image_path = self.image_paths[idx]
-            image = cv2.imread(os.path.join(self.root_dir, image_path))
+            try:
+                in_file = open(os.path.join(self.root_dir, image_path), 'rb')
+                image = jpeg.decode(in_file.read())
+            except:  # pylint: disable=bare-except
+                image = cv2.imread(os.path.join(self.root_dir, image_path))
         elif self.data_format == 'lmdb':
             image = LmdbLoader.get_image(self.root_dir, idx)
         elif self.data_format == 'list':
             image_path, label = self.metas[idx]
             image = cv2.imread(os.path.join(self.root_dir, image_path))
             label = None if label is None else torch.LongTensor(label)
-            data.update({'label': label})
+            # data.update({'label': label})
         elif self.data_format == 'zip':
             image_path = self.image_paths[idx]
             image = ZipLoader.get_image(self.root_dir, image_path)
