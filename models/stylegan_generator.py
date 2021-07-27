@@ -63,9 +63,11 @@ class StyleGANGenerator(nn.Module):
     (5) fused_scale: Whether to fused `upsample` and `conv2d` together,
         resulting in `conv2d_transpose`. (default: `auto`)
     (6) use_wscale: Whether to use weight scaling. (default: True)
-    (7) fmaps_base: Factor to control number of feature maps for each layer.
+    (7) noise_type: Type of noise added to the convolutional results at each
+        layer. (default: `spatial`)
+    (8) fmaps_base: Factor to control number of feature maps for each layer.
         (default: 16 << 10)
-    (8) fmaps_max: Maximum number of feature maps in each layer. (default: 512)
+    (9) fmaps_max: Maximum number of feature maps in each layer. (default: 512)
     """
 
     def __init__(self,
@@ -82,6 +84,7 @@ class StyleGANGenerator(nn.Module):
                  const_input=True,
                  fused_scale='auto',
                  use_wscale=True,
+                 noise_type='spatial',
                  fmaps_base=16 << 10,
                  fmaps_max=512):
         """Initializes with basic settings.
@@ -113,6 +116,7 @@ class StyleGANGenerator(nn.Module):
         self.const_input = const_input
         self.fused_scale = fused_scale
         self.use_wscale = use_wscale
+        self.noise_type = noise_type
         self.fmaps_base = fmaps_base
         self.fmaps_max = fmaps_max
 
@@ -142,6 +146,7 @@ class StyleGANGenerator(nn.Module):
                                          const_input=self.const_input,
                                          fused_scale=self.fused_scale,
                                          use_wscale=self.use_wscale,
+                                         noise_type=self.noise_type,
                                          fmaps_base=self.fmaps_base,
                                          fmaps_max=self.fmaps_max)
 
@@ -152,6 +157,26 @@ class StyleGANGenerator(nn.Module):
             self.pth_to_tf_var_mapping[f'truncation.{key}'] = val
         for key, val in self.synthesis.pth_to_tf_var_mapping.items():
             self.pth_to_tf_var_mapping[f'synthesis.{key}'] = val
+
+    def set_space_of_latent(self, space_of_latent='w'):
+        """Sets the space to which the latent code belong.
+
+        This function is particually used for choosing how to inject the latent
+        code into the convolutional layers. The original generator will take a
+        W-Space code and apply it for style modulation after an affine
+        transformation. But, sometimes, it may need to directly feed an already
+        affine-transformed code into the convolutional layer, e.g., when
+        training an encoder for GAN inversion. We term the transformed space as
+        Style Space (or Y-Space). This function is designed to tell the
+        convolutional layers how to use the input code.
+
+        Args:
+            space_of_latent: The space to which the latent code belong. Case
+                insensitive. (default: 'w')
+        """
+        for module in self.modules():
+            if isinstance(module, StyleModLayer):
+                setattr(module, 'space_of_latent', space_of_latent)
 
     def forward(self,
                 z,
@@ -341,6 +366,7 @@ class SynthesisModule(nn.Module):
                  const_input=True,
                  fused_scale='auto',
                  use_wscale=True,
+                 noise_type='spatial',
                  fmaps_base=16 << 10,
                  fmaps_max=512):
         super().__init__()
@@ -355,6 +381,7 @@ class SynthesisModule(nn.Module):
         self.const_input = const_input
         self.fused_scale = fused_scale
         self.use_wscale = use_wscale
+        self.noise_type = noise_type
         self.fmaps_base = fmaps_base
         self.fmaps_max = fmaps_max
 
@@ -378,7 +405,8 @@ class SynthesisModule(nn.Module):
                                               resolution=self.init_res,
                                               w_space_dim=self.w_space_dim,
                                               position='const_init',
-                                              use_wscale=self.use_wscale))
+                                              use_wscale=self.use_wscale,
+                                              noise_type=self.noise_type))
                     tf_layer_name = 'Const'
                     self.pth_to_tf_var_mapping[f'{layer_name}.const'] = (
                         f'{res}x{res}/{tf_layer_name}/const')
@@ -390,7 +418,8 @@ class SynthesisModule(nn.Module):
                                               w_space_dim=self.w_space_dim,
                                               kernel_size=self.init_res,
                                               padding=self.init_res - 1,
-                                              use_wscale=self.use_wscale))
+                                              use_wscale=self.use_wscale,
+                                              noise_type=self.noise_type))
                     tf_layer_name = 'Dense'
                     self.pth_to_tf_var_mapping[f'{layer_name}.weight'] = (
                         f'{res}x{res}/{tf_layer_name}/weight')
@@ -406,7 +435,8 @@ class SynthesisModule(nn.Module):
                                           w_space_dim=self.w_space_dim,
                                           upsample=True,
                                           fused_scale=fused_scale,
-                                          use_wscale=self.use_wscale))
+                                          use_wscale=self.use_wscale,
+                                          noise_type=self.noise_type))
                 tf_layer_name = 'Conv0_up'
                 self.pth_to_tf_var_mapping[f'{layer_name}.weight'] = (
                     f'{res}x{res}/{tf_layer_name}/weight')
@@ -428,7 +458,8 @@ class SynthesisModule(nn.Module):
                                       out_channels=self.get_nf(res),
                                       resolution=res,
                                       w_space_dim=self.w_space_dim,
-                                      use_wscale=self.use_wscale))
+                                      use_wscale=self.use_wscale,
+                                      noise_type=self.noise_type))
             tf_layer_name = 'Conv' if res == self.init_res else 'Conv1'
             self.pth_to_tf_var_mapping[f'{layer_name}.weight'] = (
                 f'{res}x{res}/{tf_layer_name}/weight')
@@ -468,13 +499,6 @@ class SynthesisModule(nn.Module):
         return min(self.fmaps_base // res, self.fmaps_max)
 
     def forward(self, wp, lod=None, randomize_noise=False):
-        if wp.ndim != 3 or wp.shape[1:] != (self.num_layers, self.w_space_dim):
-            raise ValueError(f'Input tensor should be with shape '
-                             f'[batch_size, num_layers, w_space_dim], where '
-                             f'`num_layers` equals to {self.num_layers}, and '
-                             f'`w_space_dim` equals to {self.w_space_dim}!\n'
-                             f'But `{wp.shape}` is received!')
-
         lod = self.lod.cpu().tolist() if lod is None else lod
         if lod + self.init_res_log2 > self.final_res_log2:
             raise ValueError(f'Maximum level-of-detail (lod) is '
@@ -607,11 +631,20 @@ class BlurLayer(nn.Module):
 class NoiseApplyingLayer(nn.Module):
     """Implements the noise applying layer."""
 
-    def __init__(self, resolution, channels):
+    def __init__(self, resolution, channels, noise_type='spatial'):
         super().__init__()
+        self.noise_type = noise_type.lower()
         self.res = resolution
-        self.register_buffer('noise', torch.randn(1, 1, self.res, self.res))
-        self.weight = nn.Parameter(torch.zeros(channels))
+        self.channels = channels
+        if self.noise_type == 'spatial':
+            self.register_buffer('noise', torch.randn(1, 1, self.res, self.res))
+            self.weight = nn.Parameter(torch.zeros(self.channels))
+        elif self.noise_type == 'channel':
+            self.register_buffer('noise', torch.randn(1, self.channels, 1, 1))
+            self.weight = nn.Parameter(torch.zeros(self.res, self.res))
+        else:
+            raise NotImplementedError(f'Not implemented noise type: '
+                                      f'`{self.noise_type}`!')
 
     def forward(self, x, randomize_noise=False):
         if x.ndim != 4:
@@ -619,10 +652,18 @@ class NoiseApplyingLayer(nn.Module):
                              f'[batch_size, channel, height, width], '
                              f'but `{x.shape}` is received!')
         if randomize_noise:
-            noise = torch.randn(x.shape[0], 1, self.res, self.res).to(x)
+            if self.noise_type == 'spatial':
+                noise = torch.randn(x.shape[0], 1, self.res, self.res).to(x)
+            elif self.noise_type == 'channel':
+                noise = torch.randn(x.shape[0], self.channels, 1, 1).to(x)
         else:
             noise = self.noise
-        return x + noise * self.weight.view(1, -1, 1, 1)
+
+        if self.noise_type == 'spatial':
+            x = x + noise * self.weight.view(1, self.channels, 1, 1)
+        elif self.noise_type == 'channel':
+            x = x + noise * self.weight.view(1, 1, self.res, self.res)
+        return x
 
 
 class StyleModLayer(nn.Module):
@@ -646,14 +687,40 @@ class StyleModLayer(nn.Module):
             self.wscale = 1.0
 
         self.bias = nn.Parameter(torch.zeros(self.out_channels * 2))
+        self.space_of_latent = 'w'
+
+    def forward_style(self, w):
+        """Gets style code from the given input.
+
+        More specifically, if the input is from W-Space, it will be projected by
+        an affine transformation. If it is from the Style Space (Y-Space), no
+        operation is required.
+
+        NOTE: For codes from Y-Space, we use slicing to make sure the dimension
+        is correct, in case that the code is padded before fed into this layer.
+        """
+        if self.space_of_latent == 'w':
+            if w.ndim != 2 or w.shape[1] != self.w_space_dim:
+                raise ValueError(f'The input tensor should be with shape '
+                                 f'[batch_size, w_space_dim], where '
+                                 f'`w_space_dim` equals to '
+                                 f'{self.w_space_dim}!\n'
+                                 f'But `{w.shape}` is received!')
+            style = F.linear(w,
+                             weight=self.weight * self.wscale,
+                             bias=self.bias)
+        elif self.space_of_latent == 'y':
+            if w.ndim != 2 or w.shape[1] < 2 * self.out_channels:
+                raise ValueError(f'The input tensor should be with shape '
+                                 f'[batch_size, y_space_dim], where '
+                                 f'`y_space_dim` equals to '
+                                 f'{2 * self.out_channels}!\n'
+                                 f'But `{w.shape}` is received!')
+            style = w[:, :2 * self.out_channels]
+        return style
 
     def forward(self, x, w):
-        if w.ndim != 2 or w.shape[1] != self.w_space_dim:
-            raise ValueError(f'The input tensor should be with shape '
-                             f'[batch_size, w_space_dim], where '
-                             f'`w_space_dim` equals to {self.w_space_dim}!\n'
-                             f'But `{w.shape}` is received!')
-        style = F.linear(w, weight=self.weight * self.wscale, bias=self.bias)
+        style = self.forward_style(w)
         style_split = style.view(-1, 2, self.out_channels, 1, 1)
         x = x * (style_split[:, 0] + 1) + style_split[:, 1]
         return x, style
@@ -682,7 +749,8 @@ class ConvBlock(nn.Module):
                  use_wscale=True,
                  wscale_gain=_WSCALE_GAIN,
                  lr_mul=1.0,
-                 activation_type='lrelu'):
+                 activation_type='lrelu',
+                 noise_type='spatial'):
         """Initializes with block settings.
 
         Args:
@@ -706,6 +774,9 @@ class ConvBlock(nn.Module):
             lr_mul: Learning multiplier for both weight and bias. (default: 1.0)
             activation_type: Type of activation. Support `linear` and `lrelu`.
                 (default: `lrelu`)
+            noise_type: Type of noise added to the feature map after the
+                convolution (if needed). Support `spatial` and `channel`.
+                (default: `spatial`)
 
         Raises:
             NotImplementedError: If the `activation_type` is not supported.
@@ -729,7 +800,8 @@ class ConvBlock(nn.Module):
                                       f'`{activation_type}`!')
 
         if self.position != 'last':
-            self.apply_noise = NoiseApplyingLayer(resolution, out_channels)
+            self.apply_noise = NoiseApplyingLayer(
+                resolution, out_channels, noise_type=noise_type)
             self.normalize = InstanceNormLayer()
             self.style = StyleModLayer(w_space_dim, out_channels, use_wscale)
 
