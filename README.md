@@ -59,7 +59,7 @@ python synthesize.py stylegan_ffhq1024
 
 You can also play the demo at [Colab](https://colab.research.google.com/github/genforce/genforce/blob/master/docs/synthesize_demo.ipynb).
 
-## Get Started
+## Play with GANs
 
 ### Test
 
@@ -109,6 +109,30 @@ All log files in the training process, such as log message, checkpoints, synthes
       [--options additional_arguments]
   ```
 
+## Play with Encoders for GAN Inversion
+
+### Train
+
+- On local machine:
+
+  ```shell
+  GPUS=8
+  CONFIG=configs/stylegan_ffhq256_encoder_y.py
+  WORK_DIR=work_dirs/stylegan_ffhq256_encoder_y
+  ./scripts/dist_train.sh ${GPUS} ${CONFIG} ${WORK_DIR} \
+      [--options additional_arguments]
+  ```
+
+
+- Using `slurm`:
+
+  ```shell
+  CONFIG=configs/stylegan_ffhq256_encoder_y.py
+  WORK_DIR=work_dirs/stylegan_ffhq256_encoder_y
+  GPUS=8 ./scripts/slurm_train.sh ${PARTITION} ${JOB_NAME} \
+      ${CONFIG} ${WORK_DIR} \
+      [--options additional_arguments]
+  ```
 ## Contributors
 
 | Member                                      | Module |
@@ -129,7 +153,7 @@ The project is under the [MIT License](./LICENSE).
 
 ## Acknowledgement
 
-We thank [PGGAN](https://github.com/tkarras/progressive_growing_of_gans), [StyleGAN](https://github.com/NVlabs/stylegan), [StyleGAN2](https://github.com/NVlabs/stylegan2), [StyleGAN2-ADA](https://github.com/NVlabs/stylegan2-ada) for their work on high-quality image synthesis. We also thank [MMCV](https://github.com/open-mmlab/mmcv) for the inspiration on the design of controllers.
+We thank [PGGAN](https://github.com/tkarras/progressive_growing_of_gans), [StyleGAN](https://github.com/NVlabs/stylegan), [StyleGAN2](https://github.com/NVlabs/stylegan2), [StyleGAN2-ADA](https://github.com/NVlabs/stylegan2-ada) for their work on high-quality image synthesis. We thank [IDInvert](https://github.com/genforce/idinvert) and [GHFeat](https://github.com/genforce/ghfeat) for their contribution to GAN inversion. We also thank [MMCV](https://github.com/open-mmlab/mmcv) for the inspiration on the design of controllers.
 
 ## BibTex
 
