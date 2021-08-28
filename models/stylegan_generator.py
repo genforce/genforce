@@ -518,10 +518,10 @@ class SynthesisModule(nn.Module):
                         x, style = self.layer0(x, wp[:, 0], randomize_noise)
                 else:
                     x, style = self.__getattr__(f'layer{2 * block_idx}')(
-                        x, wp[:, 2 * block_idx])
+                        x, wp[:, 2 * block_idx], randomize_noise)
                 results[f'style{2 * block_idx:02d}'] = style
                 x, style = self.__getattr__(f'layer{2 * block_idx + 1}')(
-                    x, wp[:, 2 * block_idx + 1])
+                    x, wp[:, 2 * block_idx + 1], randomize_noise)
                 results[f'style{2 * block_idx + 1:02d}'] = style
             if current_lod - 1 < lod <= current_lod:
                 image = self.__getattr__(f'output{block_idx}')(x, None)
