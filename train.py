@@ -68,11 +68,8 @@ def main():
     torch.backends.cudnn.benchmark = config.cudnn_benchmark
     torch.backends.cudnn.deterministic = config.cudnn_deterministic
 
-    # Set random seed.
+    # Set deterministic if random seed is provided.
     if config.seed is not None:
-        random.seed(config.seed)
-        np.random.seed(config.seed)
-        torch.manual_seed(config.seed)
         config.cudnn_deterministic = True
         torch.backends.cudnn.deterministic = True
         warnings.warn('Random seed is set for training! '
@@ -84,7 +81,15 @@ def main():
     # Set launcher.
     config.is_distributed = True
     init_dist(config.launcher, backend=config.backend)
-    config.num_gpus = dist.get_world_size()
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+    config.num_gpus = world_size
+
+    # Set random seed.
+    if config.seed is not None:
+        random.seed(config.seed * world_size + rank)
+        np.random.seed(config.seed * world_size + rank)
+        torch.manual_seed(config.seed * world_size + rank)
 
     # Setup logger.
     if dist.get_rank() == 0:
