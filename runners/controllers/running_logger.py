@@ -88,12 +88,12 @@ class RunningLogger(BaseController):
                     continue
                 if name.startswith('loss_'):
                     self.tensorboard_writer.add_scalar(
-                        name.replace('loss_', 'loss/'), value)
+                        name.replace('loss_', 'loss/'), value, runner.iter)
                 elif name.startswith('lr_'):
                     self.tensorboard_writer.add_scalar(
-                        name.replace('lr_', 'learning_rate/'), value)
+                        name.replace('lr_', 'learning_rate/'), value, runner.iter)
                 else:
-                    self.tensorboard_writer.add_scalar(name, value)
+                    self.tensorboard_writer.add_scalar(name, value, runner.iter)
 
         # Clear running stats.
         runner.running_stats.clear()
