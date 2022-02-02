@@ -26,7 +26,7 @@ from utils.visualizer import postprocess_image
 
 __all__ = ['convert_stylegan2ada_tf_weight']
 
-GAN_TPYE = 'stylegan2'
+GAN_TPYE = 'stylegan2ada'
 OFFICIAL_CODE_DIR = 'stylegan2ada_tf_official'
 BASE_DIR = os.path.dirname(os.path.relpath(__file__))
 CODE_PATH = os.path.join(BASE_DIR, OFFICIAL_CODE_DIR)
@@ -40,7 +40,9 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
                                    pth_weight_path,
                                    test_num=10,
                                    save_test_image=False,
-                                   verbose=False):
+                                   verbose=False,
+                                   discri_architecture='resnet'
+                                   ):
     """Converts the pre-trained StyleGAN2-ADA weights.
 
     Args:
@@ -72,6 +74,7 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
     G_vars = dict(G.__getstate__()['variables'])
     G_vars.update(dict(G.components.mapping.__getstate__()['variables']))
     G_vars.update(dict(G.components.synthesis.__getstate__()['variables']))
+    mapping_layers = len(list(filter(lambda x: x.startswith('Dense'), G_vars))) // 2
     G_pth = build_model(gan_type=GAN_TPYE,
                         module='generator',
                         resolution=resolution,
@@ -79,6 +82,7 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
                         w_space_dim=w_space_dim,
                         label_size=label_size,
                         repeat_w=repeat_w,
+                        mapping_layers=mapping_layers,
                         image_channels=image_channels)
     G_state_dict = G_pth.state_dict()
     for pth_var_name, tf_var_name in G_pth.pth_to_tf_var_mapping.items():
@@ -104,6 +108,7 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
     Gs_vars = dict(Gs.__getstate__()['variables'])
     Gs_vars.update(dict(Gs.components.mapping.__getstate__()['variables']))
     Gs_vars.update(dict(Gs.components.synthesis.__getstate__()['variables']))
+    mapping_layers = len(list(filter(lambda x: x.startswith('Dense'), Gs_vars))) // 2
     Gs_pth = build_model(gan_type=GAN_TPYE,
                          module='generator',
                          resolution=resolution,
@@ -111,6 +116,7 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
                          w_space_dim=w_space_dim,
                          label_size=label_size,
                          repeat_w=True,
+                         mapping_layers=mapping_layers,
                          image_channels=image_channels)
     Gs_state_dict = Gs_pth.state_dict()
     for pth_var_name, tf_var_name in Gs_pth.pth_to_tf_var_mapping.items():
@@ -124,8 +130,8 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
                 var = var.permute(1, 0)
             elif 'mod_weight' in tf_var_name:
                 var = var.permute(1, 0)
-            elif 'LabelConcat' in tf_var_name:
-                pass
+            elif 'LabelEmbed' in tf_var_name:
+                var = var.permute(1, 0)
             else:
                 var = var.permute(3, 2, 0, 1)
         Gs_state_dict[pth_var_name] = var
@@ -138,6 +144,7 @@ def convert_stylegan2ada_tf_weight(tf_weight_path,
                         module='discriminator',
                         resolution=resolution,
                         label_size=label_size,
+                        architecture=discri_architecture,
                         image_channels=image_channels)
     D_state_dict = D_pth.state_dict()
     for pth_var_name, tf_var_name in D_pth.pth_to_tf_var_mapping.items():

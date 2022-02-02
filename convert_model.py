@@ -29,6 +29,8 @@ def parse_args():
                         help='Whether to save the test image. (default: False)')
     parser.add_argument('--verbose_log', action='store_true',
                         help='Whether to print verbose log. (default: False)')
+    parser.add_argument('--discri_architecture', type=str, default='resnet',
+                        help='Discriminator\'s architecture. (default: resnet). Set to origin for cifar10')
     return parser.parse_args()
 
 
@@ -61,7 +63,8 @@ def main():
                                        pth_weight_path=args.target_model_path,
                                        test_num=args.test_num,
                                        save_test_image=args.save_test_image,
-                                       verbose=args.verbose_log)
+                                       verbose=args.verbose_log,
+                                       discri_architecture=args.discri_architecture)
     elif args.model_type == 'stylegan2ada_pth':
         convert_stylegan2ada_pth_weight(src_weight_path=args.source_model_path,
                                         dst_weight_path=args.target_model_path,
