@@ -28,6 +28,8 @@ use `align_tf` argument to control the version.
 # pylint: disable=consider-merging-isinstance
 # pylint: disable=import-outside-toplevel
 # pylint: disable=no-else-return
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 from collections import namedtuple
 import warnings
@@ -57,6 +59,36 @@ InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Option
 # _InceptionOutputs set here for backwards compat
 _InceptionOutputs = InceptionOutputs
 
+
+def prebuild_inception_model(align_tf=True):
+    """Builds Inception V3 model.
+
+    This model is particular used for inference, such that `requires_grad` and
+    `mode` will both be set as `False`.
+
+    Args:
+        align_tf: Whether to align the implementation with TensorFlow version. (default: True)
+
+    Returns:
+        A `torch.nn.Module` with pre-trained weight.
+    """
+    if align_tf:
+        num_classes = 1008
+        model_url = model_urls['tf_inception_v3']
+    else:
+        num_classes = 1000
+        model_url = model_urls['inception_v3_google']
+    model = Inception3(num_classes=num_classes,
+                       aux_logits=False,
+                       transform_input=False,
+                       align_tf=align_tf)
+    cached_file = "/qianlong/genforce/configs/pt_inception-2015-12-05-6726825d.pth"
+    state_dict = torch.load(cached_file, map_location="cpu")
+    model.load_state_dict(state_dict, strict=False)
+    model.eval()
+    for param in model.parameters():
+        param.requires_grad = False
+    return model
 
 def build_inception_model(align_tf=True):
     """Builds Inception V3 model.
