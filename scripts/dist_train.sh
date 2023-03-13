@@ -10,5 +10,6 @@ python -m torch.distributed.launch \
        --master_port=${PORT} \
        ./train.py ${CONFIG} \
            --work_dir ${WORK_DIR} \
+
            --launcher="pytorch" \
            ${@:4}

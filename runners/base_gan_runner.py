@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 
-from metrics.inception import build_inception_model
+from metrics.inception import build_inception_model, prebuild_inception_model
 from metrics.fid import extract_feature
 from metrics.fid import compute_fid
 from utils.visualizer import HtmlPageVisualizer
@@ -163,7 +163,9 @@ class BaseGANRunner(BaseRunner):
             else:
                 self.logger.info(f'Building inception model '
                                  f'(using torchvision) ...')
-            self.inception_model = build_inception_model(align_tf).cuda()
+            # self.inception_model = build_inception_model(align_tf).cuda()
+            self.inception_model = prebuild_inception_model(align_tf).cuda()
+
             self.logger.info(f'Finish building inception model.')
 
         if z is not None:
