@@ -22,7 +22,7 @@ from utils.visualizer import postprocess_image
 
 __all__ = ['convert_stylegan2ada_pth_weight']
 
-GAN_TPYE = 'stylegan2'
+GAN_TPYE = 'stylegan2ada'
 OFFICIAL_CODE_DIR = 'stylegan2ada_pth_official'
 BASE_DIR = os.path.dirname(os.path.relpath(__file__))
 CODE_PATH = os.path.join(BASE_DIR, OFFICIAL_CODE_DIR)
@@ -162,6 +162,9 @@ def convert_stylegan2ada_pth_weight(src_weight_path,
     image_channels = model['G'].img_channels
     resolution = model['G'].img_resolution
     repeat_w = True
+    fmaps_base = model['G']._init_kwargs['synthesis_kwargs'].channel_base
+    mapping_layers = model['G']._init_kwargs['mapping_kwargs'].num_layers
+
 
     print(f'Converting source weights (G) to target ...')
     G_vars = dict(model['G'].named_parameters())
@@ -173,7 +176,9 @@ def convert_stylegan2ada_pth_weight(src_weight_path,
                     w_space_dim=w_space_dim,
                     label_size=label_size,
                     repeat_w=repeat_w,
-                    image_channels=image_channels)
+                    image_channels=image_channels,
+                    fmaps_base=fmaps_base,
+                    mapping_layers=mapping_layers)
     G_state_dict = G.state_dict()
     official_tf_to_pth_var_mapping = {}
     for name in G_vars.keys():
@@ -217,7 +222,9 @@ def convert_stylegan2ada_pth_weight(src_weight_path,
                      w_space_dim=w_space_dim,
                      label_size=label_size,
                      repeat_w=repeat_w,
-                     image_channels=image_channels)
+                     image_channels=image_channels,
+                     fmaps_base=fmaps_base,
+                     mapping_layers=mapping_layers)
     Gs_state_dict = Gs.state_dict()
     official_tf_to_pth_var_mapping = {}
     for name in Gs_vars.keys():
@@ -258,7 +265,8 @@ def convert_stylegan2ada_pth_weight(src_weight_path,
                     module='discriminator',
                     resolution=resolution,
                     label_size=label_size,
-                    image_channels=image_channels)
+                    image_channels=image_channels,
+                    fmaps_base=fmaps_base)
     D_state_dict = D.state_dict()
     official_tf_to_pth_var_mapping = {}
     for name in D_vars.keys():

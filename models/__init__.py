@@ -8,6 +8,8 @@ from .stylegan_generator import StyleGANGenerator
 from .stylegan_discriminator import StyleGANDiscriminator
 from .stylegan2_generator import StyleGAN2Generator
 from .stylegan2_discriminator import StyleGAN2Discriminator
+from .stylegan2ada_generator import StyleGAN2ADAGenerator
+from .stylegan2ada_discriminator import StyleGAN2ADADiscriminator
 from .encoder import EncoderNet
 from .perceptual_model import PerceptualModel
 
@@ -18,7 +20,7 @@ __all__ = [
     'build_encoder', 'build_perceptual', 'build_model'
 ]
 
-_GAN_TYPES_ALLOWED = ['pggan', 'stylegan', 'stylegan2']
+_GAN_TYPES_ALLOWED = ['pggan', 'stylegan', 'stylegan2', 'stylegan2ada']
 _MODULES_ALLOWED = ['generator', 'discriminator', 'encoder', 'perceptual']
 
 
@@ -44,6 +46,9 @@ def build_generator(gan_type, resolution, **kwargs):
         return StyleGANGenerator(resolution, **kwargs)
     if gan_type == 'stylegan2':
         return StyleGAN2Generator(resolution, **kwargs)
+    if gan_type == 'stylegan2ada':
+        return StyleGAN2ADAGenerator(resolution, **kwargs)
+    
     raise NotImplementedError(f'Unsupported GAN type `{gan_type}`!')
 
 
@@ -69,6 +74,8 @@ def build_discriminator(gan_type, resolution, **kwargs):
         return StyleGANDiscriminator(resolution, **kwargs)
     if gan_type == 'stylegan2':
         return StyleGAN2Discriminator(resolution, **kwargs)
+    if gan_type == 'stylegan2ada':
+        return StyleGAN2ADADiscriminator(resolution, **kwargs)
     raise NotImplementedError(f'Unsupported GAN type `{gan_type}`!')
 
 
