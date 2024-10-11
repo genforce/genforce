@@ -163,7 +163,8 @@ class BaseDataset(Dataset):
         self.transform_kwargs = transform_kwargs or dict()
 
         if self.data_format == 'dir':
-            self.image_paths = sorted(os.listdir(self.root_dir))
+            self.image_paths = []
+            self.image_paths = sorted(listdir(self.root_dir,self.image_paths ))
             self.num_samples = len(self.image_paths)
         elif self.data_format == 'lmdb':
             lmdb_file = LmdbLoader.get_lmdbfile(self.root_dir)
@@ -237,3 +238,16 @@ class BaseDataset(Dataset):
         data.update({'image': image})
 
         return data
+
+
+def listdir(path, pic_list):  # 传入存储的list
+
+    for file in os.listdir(path):
+        full_file_path = os.path.join(path, file)
+
+        if os.path.isdir(full_file_path):
+            listdir(full_file_path, pic_list)
+
+        if not os.path.isdir(full_file_path):
+            pic_list.append(full_file_path)
+    return pic_list
